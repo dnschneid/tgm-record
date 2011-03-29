@@ -1,0 +1,48 @@
+A couple scripts to assist in automatically recording, playing back and encoding
+TGM2P sessions.
+
+Prerequisites:
+   - A version of MAME that takes single-dash parameters.
+     Or you can modify the script to use double-dash parameters.
+     Recommended: shmupmame with TGM patches.
+   - zenity for displaying the tag dialog in tgm-record if there is no terminal.
+     Or you can just always run it in a terminal.
+   - ffmpeg with libx264 support enabled for encoding.
+     Or you can modify the script to not use libx264.
+   - mplayer for searching for the last game in a record.
+     Or you can just always encode the entire session and manually trim it or
+     whatever.
+
+Preparation:
+  1. Set mameroot at the top of each script to the root of your MAME directory.
+  2. Ensure that you have a script called "tgm" in your path that launches MAME
+     with the correct parameters to launch tgm2p, and that it passes on any
+     extra parameters to MAME without modification.
+     Recommended script:
+        #/bin/sh
+        exec mame tgm2p "$@"
+     Or you can modify the script to call mame directly.
+  3. Modify the script in any additional ways required by the prerequisites
+     above.  If you already fulfil the prerequisites, you probably don't need to
+     change anything here.
+
+Usage:
+  1. Run tgm-record when you want to play TGM.
+  2. When you quit MAME, you will be asked to "tag" the record, or discard it.
+  3. Each tagged record will also have the date and time in its filename.
+  4. The latest discarded record is also kept, just in case.
+  5. To play back, run tgm-playback.
+  6. It will list the recorded sessions available.
+  7. Specify a record to play back. Tab-completion works.
+  8. Answer any other questions it asks.
+  9. The rest is entirely automated; it will run TGM, stop it when the input is
+     finished, and process and encode the output.
+ 10. You can use tgm-delete to delete a saved record.
+
+Note that unfortunately, MAME refuses to dump an AVI into a FIFO, so you must
+have enough space for the entire AVI file of the session you are playing back,
+which can be several gigabytes for long sessions.  This is true even if you are
+only saving the last game, as that only affects the encoding phase.  It is thus
+recommended that you restart MAME every couple of games to keep the records
+short.
+Hopefully this can be resolved at some point.

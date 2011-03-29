@@ -1,0 +1,27 @@
+#!/bin/sh
+mameroot="$HOME/.mame"
+nv="$mameroot/nvram/tgm2p.nv"
+inp="$mameroot/inp"
+meta="$mameroot/meta"
+name="`date '+%Y%m%d.%H%M'`"
+[ -d "$meta" ] || mkdir "$meta" || echo 'Unable to create metadata directory. Record length will not be saved.'
+cp "$nv" "$nv.$name"
+echo "Recording $name..."
+seconds="`tgm -record "$name.inp" "$@" | awk '/^Average speed:/ {print substr($4,2)}'`"
+echo "Recorded $seconds seconds of input."
+if [ "$TERM" ]; then
+    read -p 'Give a name, or leave blank to discard: ' tag
+else
+    tag="`zenity --entry --title='TGM Record' --window-icon='/usr/local/share/pixmaps/quadrapassel.xpm' --text='Enter a tag for the record, or cancel to discard it.'`" && [ ! "$tag" ] && exit 0
+fi
+if [ "$tag" ]; then
+    mv "$nv.$name" "$nv.$name.$tag"
+    mv "$inp/$name.inp" "$inp/$name.$tag.inp"
+    echo "$seconds" > "$meta/$name.$tag"
+    echo "Saved as '$name.$tag'"
+else
+    mv "$nv.$name" "$nv.discarded"
+    mv "$inp/$name.inp" "$inp/discarded.inp"
+    echo "$seconds" > "$meta/discarded"
+    echo "Discarded."
+fi

@@ -1,0 +1,83 @@
+#!/bin/bash
+mameroot="$HOME/.mame"
+nv="$mameroot/nvram/tgm2p.nv"
+inp="$mameroot/inp"
+snap="$mameroot/snap"
+meta="$mameroot/meta"
+cd "$meta" &>/dev/null
+echo 'Choose an input file:'
+ls
+read -ep '> ' name
+inpfile="$inp/$name.inp"
+nvfile="$nv.$name"
+metafile="$meta/$name"
+if [ ! -f "$inpfile" ]; then
+    echo 'Input file not found.'
+    exit 1
+fi
+if [ ! -f "$nvfile" ]; then
+    echo 'Matching NVRAM not found. Playback is not possible.'
+    exit 1
+fi
+if [ ! -r "$metafile" ]; then
+    echo 'Playback metadata not found. You will have to manually stop playback.'
+    seconds=''
+else
+    read seconds < "$metafile"
+    if [ ! "$seconds" ]; then
+        echo 'Recording length unknown. You will have to manually stop playback.'
+        seconds=''
+    else
+        echo "Recording is $seconds seconds long."
+        seconds="-seconds_to_run $((seconds+1))"
+    fi
+fi
+cp "$nvfile" "$snap/tgm2p.nv"
+echo -n 'Current directory: '
+cd -
+out=''
+read -ep 'Give an output filename if you want to encode: ' -i "$name.mkv" out
+while [ "$out"x != x -a -e "$out" ]; do
+    read -ep "'$out' already exists. Confirm the filename: " -i "$out" out2
+    [ "$out2" = "$out" ] && rm -f "$out" && break
+    out="$out2"
+done
+if [ "$out" ]; then
+    echo "Choose a crop mode:
+    1  Auto-crop to P1's last game
+    2  Auto-crop to P2's last game
+    Anything else: no auto-crop."
+    read -p ' > ' ac
+
+    echo "Encoding '$name' to '$out'"
+    avi="$out.avi"
+    avifile="$snap/$avi"
+    trap "rm -f '$avifile' '$snap/tgm2p.nv'" SIGINT
+    tgm $seconds -mt -nothrottle -nosleep -resolution 320x240 -nvram_directory 'snap' -playback "$name.inp" -aviwrite "$avi"
+
+    st=0
+    if [ "$ac" ] && [ "$ac" = 1 -o "$ac" = 2 ]; then
+        echo "Scanning video stream"
+        [ $ac = 1 ] && crop=80:150:18:50
+        [ $ac = 2 ] && crop=80:150:178:50
+        st=`mplayer -quiet -benchmark -noconfig all -nosound -vo null -vf flip,crop=$crop,blackframe=100:50 "$avifile" | \
+            awk 'BEGIN {l=0; ll=0} /^vf_blackframe/ {n=int($2); if (l!=0 && n-l > 600) ll=l; l=n} END {print ll/60}'`
+        [ ! "$st" ] && st=0
+        echo "Starting encode $st seconds in"
+    fi
+
+    ffmpeg -loglevel warning -i "$avifile" -ss $st -acodec libfaac -ab 96k -vcodec libx264 -vpre normal -crf 20 -threads 0 "$out"
+    success=$?
+
+    rm -f "$avifile" "$snap/tgm2p.nv"
+    if [ $success = 0 ]; then
+        echo "Done encoding '$out'."
+    else
+        echo "Error encoding '$out'."
+        exit $success
+    fi
+else
+    tgm $seconds -nvram_directory 'snap' -playback "$name.inp"
+    rm "$snap/tgm2p.nv"
+fi
+

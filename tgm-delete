@@ -1,0 +1,17 @@
+#!/bin/bash
+mameroot="$HOME/.mame"
+nv="$mameroot/nvram/tgm2p.nv"
+inp="$mameroot/inp"
+snap="$mameroot/snap"
+meta="$mameroot/meta"
+if [ $# = 0 ]; then
+    cd "$meta" &>/dev/null
+    echo 'Choose an input file to delete:'
+    ls
+    read -ep '> ' name
+    [ "$name" ] && rm -v "$inp/$name.inp" "$nv.$name" "$meta/$name"
+else
+    for name in "$@"; do
+        rm -v "$inp/$name.inp" "$nv.$name" "$meta/$name"
+    done
+fi
