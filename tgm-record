@@ -7,12 +7,12 @@ name="`date '+%Y%m%d.%H%M'`"
 [ -d "$meta" ] || mkdir "$meta" || echo 'Unable to create metadata directory. Record length will not be saved.'
 cp "$nv" "$nv.$name"
 echo "Recording $name..."
-seconds="`tgm -record "$name.inp" "$@" | awk '/^Average speed:/ {print substr($4,2)}'`"
+seconds="`tgm -record "$name.inp" "$@" 2>/dev/null | awk '/^Average speed:/ {print substr($4,2)}'`"
 echo "Recorded $seconds seconds of input."
 if [ "$TERM" ]; then
     read -p 'Give a name, or leave blank to discard: ' tag
 else
-    tag="`zenity --entry --title='TGM Record' --window-icon='/usr/local/share/pixmaps/quadrapassel.xpm' --text='Enter a tag for the record, or cancel to discard it.'`" && [ ! "$tag" ] && exit 0
+    tag="`zenity --entry --title='TGM Record' --window-icon='/usr/local/share/pixmaps/quadrapassel.xpm' --text='Enter a tag for the record, or cancel to discard it.' 2>/dev/null`" && [ ! "$tag" ] && exit 0
 fi
 if [ "$tag" ]; then
     mv "$nv.$name" "$nv.$name.$tag"
