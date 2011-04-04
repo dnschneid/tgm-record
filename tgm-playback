@@ -66,7 +66,7 @@ if [ "$out" ]; then
         echo "Starting encode $st seconds in"
     fi
 
-    ffmpeg -loglevel warning -i "$avifile" -ss $st -acodec libfaac -ab 96k -vcodec libx264 -vpre normal -crf 20 -threads 0 "$out"
+    ffmpeg -i "$avifile" -ss $st -acodec libfaac -ab 96k -vcodec libx264 -vpre normal -crf 20 -threads 0 "$out"
     success=$?
 
     rm -f "$avifile" "$snap/tgm2p.nv"
