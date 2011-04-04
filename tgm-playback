@@ -53,7 +53,7 @@ if [ "$out" ]; then
     avi="$out.avi"
     avifile="$snap/$avi"
     trap "rm -f '$avifile' '$snap/tgm2p.nv'" SIGINT
-    tgm $seconds -mt -nothrottle -nosleep -resolution 320x240 -nvram_directory 'snap' -playback "$name.inp" -aviwrite "$avi" 2>/dev/null
+    tgm $seconds -mt -nothrottle -nosleep -window -resolution 320x240 -nvram_directory 'snap' -playback "$name.inp" -aviwrite "$avi" 2>/dev/null
 
     st=0
     if [ "$ac" ] && [ "$ac" = 1 -o "$ac" = 2 ]; then
