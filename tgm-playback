@@ -1,6 +1,8 @@
 #!/bin/bash
+mameroot=${MAMEROOT:-"$HOME/.mame"}
 if [ ! "$1" ]; then
-    echo "Usage: `basename "$0"` game [tag]"
+    echo "Usage: `basename "$0"` game [tag]
+MAME root directory: $mameroot" 1>&2
     exit 1
 fi
 game="$1"
@@ -11,7 +13,6 @@ launcher="`which tgm-launcher`"
 [ ! -f "$launcher" ] && echo 'Unable to find tgm-launcher helper script.' 1>&2 \
     || . "$launcher"
 
-mameroot="$HOME/.mame"
 nv="$mameroot/nvram/$game.nv"
 inp="$mameroot/inp/$game"
 snap="$mameroot/snap"
