@@ -1,17 +1,23 @@
 #!/bin/bash
+if [ ! "$1" ]; then
+    echo "Usage: `basename "$0"` game [tag ...]"
+    exit 1
+fi
+game="$1"
+shift
 mameroot="$HOME/.mame"
-nv="$mameroot/nvram/tgm2p.nv"
-inp="$mameroot/inp"
+nv="$mameroot/nvram/$game.nv"
+inp="$mameroot/inp/$game"
 snap="$mameroot/snap"
-meta="$mameroot/meta"
+meta="$mameroot/meta.$game"
 if [ $# = 0 ]; then
     cd "$meta" &>/dev/null
     echo 'Choose an input file to delete:'
     ls
     read -ep '> ' name
-    [ "$name" ] && rm -v "$inp/$name.inp" "$nv.$name" "$meta/$name"
+    [ "$name" ] && rm -v "$inp.$name.inp" "$nv.$name" "$meta/$name"
 else
     for name in "$@"; do
-        rm -v "$inp/$name.inp" "$nv.$name" "$meta/$name"
+        rm -v "$inp.$name.inp" "$nv.$name" "$meta/$name"
     done
 fi

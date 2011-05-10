@@ -1,14 +1,30 @@
 #!/bin/bash
+if [ ! "$1" ]; then
+    echo "Usage: `basename "$0"` game [tag]"
+    exit 1
+fi
+game="$1"
+shift
+launcher="`which tgm-launcher`"
+[ -f "${launcher:="`dirname "$0"`/tgm-launcher"}" ] \
+    || launcher="`dirname "\`readlink -f "$0"\`"`/tgm-launcher"
+[ ! -f "$launcher" ] && echo 'Unable to find tgm-launcher helper script.' 1>&2 \
+    || . "$launcher"
+
 mameroot="$HOME/.mame"
-nv="$mameroot/nvram/tgm2p.nv"
-inp="$mameroot/inp"
+nv="$mameroot/nvram/$game.nv"
+inp="$mameroot/inp/$game"
 snap="$mameroot/snap"
-meta="$mameroot/meta"
+meta="$mameroot/meta.$game"
 cd "$meta" &>/dev/null
 echo 'Choose an input file:'
-ls
-read -ep '> ' name
-inpfile="$inp/$name.inp"
+if [ ! "$1" ]; then
+    ls
+    read -ep '> ' name
+else
+    name="$1"
+fi
+inpfile="$inp.$name.inp"
 nvfile="$nv.$name"
 metafile="$meta/$name"
 if [ ! -f "$inpfile" ]; then
@@ -32,28 +48,31 @@ else
         seconds="-seconds_to_run $((seconds+1))"
     fi
 fi
-cp "$nvfile" "$snap/tgm2p.nv"
+cp "$nvfile" "$snap/$game.nv"
 echo -n 'Current directory: '
 cd -
 out=''
-read -ep 'Give an output filename if you want to encode: ' -i "$name.mkv" out
+read -ep 'Give an output filename if you want to encode: ' -i "$game.$name.mkv" out
 while [ "$out"x != x -a -e "$out" ]; do
     read -ep "'$out' already exists. Confirm the filename: " -i "$out" out2
     [ "$out2" = "$out" ] && rm -f "$out" && break
     out="$out2"
 done
 if [ "$out" ]; then
-    echo "Choose a crop mode:
-    1  Auto-crop to P1's last game
-    2  Auto-crop to P2's last game
-    Anything else: no auto-crop."
-    read -p ' > ' ac
+    ac=''
+    if [ "$game" = 'tgm2p' ]; then
+        echo "Choose a crop mode:
+        1  Auto-crop to P1's last game
+        2  Auto-crop to P2's last game
+        Anything else: no auto-crop."
+        read -p ' > ' ac
+    fi
 
     echo "Encoding '$name' to '$out'"
     avi="$out.avi"
     avifile="$snap/$avi"
-    trap "rm -f '$avifile' '$snap/tgm2p.nv'" SIGINT
-    tgm $seconds -mt -nothrottle -nosleep -window -resolution 320x240 -nvram_directory 'snap' -playback "$name.inp" -aviwrite "$avi" 2>/dev/null
+    trap "rm -f '$avifile' '$snap/$game.nv'" SIGINT
+    $game $seconds -mt -nothrottle -nosleep -window -resolution 320x240 -nvram_directory 'snap' -playback "$game.$name.inp" -aviwrite "$avi" 2>/dev/null
 
     st=0
     if [ "$ac" ] && [ "$ac" = 1 -o "$ac" = 2 ]; then
@@ -69,7 +88,7 @@ if [ "$out" ]; then
     ffmpeg -i "$avifile" -ss $st -acodec libfaac -ab 96k -vcodec libx264 -vpre normal -crf 20 -threads 0 "$out"
     success=$?
 
-    rm -f "$avifile" "$snap/tgm2p.nv"
+    rm -f "$avifile" "$snap/$game.nv"
     if [ $success = 0 ]; then
         echo "Done encoding '$out'."
     else
@@ -77,7 +96,7 @@ if [ "$out" ]; then
         exit $success
     fi
 else
-    tgm $seconds -nvram_directory 'snap' -playback "$name.inp" 2>/dev/null
-    rm "$snap/tgm2p.nv"
+    $game $seconds -nvram_directory 'snap' -playback "$game.$name.inp" 2>/dev/null
+    rm "$snap/$game.nv"
 fi
 

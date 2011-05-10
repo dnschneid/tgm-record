@@ -1,14 +1,26 @@
 #!/bin/sh
+if [ ! "$1" ]; then
+    echo "Usage: `basename "$0"` game"
+    exit 1
+fi
+game="$1"
+shift
+launcher="`which tgm-launcher`"
+[ -f "${launcher:="`dirname "$0"`/tgm-launcher"}" ] \
+    || launcher="`dirname "\`readlink -f "$0"\`"`/tgm-launcher"
+[ ! -f "$launcher" ] && echo 'Unable to find tgm-launcher helper script.' 1>&2 \
+    || . "$launcher"
+
 mameroot="$HOME/.mame"
-nv="$mameroot/nvram/tgm2p.nv"
-inp="$mameroot/inp"
-meta="$mameroot/meta"
+nv="$mameroot/nvram/$game.nv"
+inp="$mameroot/inp/$game"
+meta="$mameroot/meta.$game"
 name="`date '+%Y%m%d.%H%M'`"
 [ -d "$meta" ] || mkdir "$meta" || echo 'Unable to create metadata directory. Record length will not be saved.'
 cp "$nv" "$nv.$name"
 echo "Recording $name..."
-seconds="`tgm -record "$name.inp" "$@" 2>/dev/null | awk '/^Average speed:/ {print substr($4,2)}'`"
-echo "Recorded $seconds seconds of input."
+seconds="`$game -record "$game.$name.inp" "$@" 2>/dev/null | awk '/^Average speed:/ {print substr($4,2)}'`"
+echo "Recorded ${seconds:="0"} seconds of input."
 if [ -t 0 ]; then
     read -p 'Give a name, or leave blank to discard: ' tag
 else
@@ -16,12 +28,12 @@ else
 fi
 if [ "$tag" ]; then
     mv "$nv.$name" "$nv.$name.$tag"
-    mv "$inp/$name.inp" "$inp/$name.$tag.inp"
+    mv "$inp.$name.inp" "$inp.$name.$tag.inp"
     echo "$seconds" > "$meta/$name.$tag"
     echo "Saved as '$name.$tag'"
 else
     mv "$nv.$name" "$nv.discarded"
-    mv "$inp/$name.inp" "$inp/discarded.inp"
+    mv "$inp.$name.inp" "$inp.discarded.inp"
     echo "$seconds" > "$meta/discarded"
     echo "Discarded."
 fi

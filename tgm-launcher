@@ -1,0 +1,8 @@
+#!/bin/sh
+tgmj() {
+    mame tgmj "$@"
+}
+tgm2p() {
+    mame tgm2p "$@"
+}
+[ "`basename "$0"`" = 'tgm-launcher' ] && "$@"
